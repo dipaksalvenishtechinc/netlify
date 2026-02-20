@@ -290,13 +290,11 @@ function usePredictiveSearch(): UsePredictiveSearchReturn {
     term.current = String(fetcher.formData?.get('q') || '');
   }
 
-  // capture the search input element as a ref
   useEffect(() => {
-    if (!inputRef.current) {
+    if (typeof document !== 'undefined') {
       inputRef.current = document.querySelector('input[type="search"]');
     }
   }, []);
-
   const {items, total} =
     fetcher?.data?.result ?? getEmptyPredictiveSearchResult();
 
