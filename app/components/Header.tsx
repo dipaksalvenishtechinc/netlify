@@ -1,8 +1,15 @@
-import {Suspense} from 'react';
-import {Await, NavLink} from '@remix-run/react';
-import {type CartViewPayload, useAnalytics} from '@shopify/hydrogen';
-import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
-import {useAside} from '~/components/Aside';
+import { Suspense, useState } from 'react';
+import { Await, NavLink, useAsyncValue } from '@remix-run/react';
+import {
+  type CartViewPayload,
+  useAnalytics,
+  useOptimisticCart,
+} from '@shopify/hydrogen';
+import type { HeaderQuery, CartApiQueryFragment } from 'storefrontapi.generated';
+import { useAside } from '~/components/Aside';
+import gildedLogo from '../assets/gilded-logo.png';
+// Import icons
+import { FiUser, FiSearch, FiShoppingCart, FiMenu } from 'react-icons/fi';
 
 interface HeaderProps {
   header: HeaderQuery;
@@ -19,22 +26,80 @@ export function Header({
   cart,
   publicStoreDomain,
 }: HeaderProps) {
-  const {shop, menu} = header;
+  const { shop, menu } = header;
+
   return (
-    <header className="header">
-      <NavLink prefetch="intent" to="/" style={activeLinkStyle} end>
-        <strong>{shop.name}</strong>
-      </NavLink>
-      <HeaderMenu
-        menu={menu}
-        viewport="desktop"
-        primaryDomainUrl={header.shop.primaryDomain.url}
-        publicStoreDomain={publicStoreDomain}
-      />
-      <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
+    <header className="header justify-center relative">
+      <div className='opticon-container w-[1306px]'>
+        <SideBarMenu
+          menu={menu}
+          primaryDomainUrl={shop.primaryDomain.url}
+          publicStoreDomain={publicStoreDomain}
+        />
+        <div className='flex justify-between h-[78px]'>
+          <NavLink prefetch="intent" to="/" style={activeLinkStyle} end>
+           <img alt='' src={shop.brand?.logo?.image?.url}></img>
+          </NavLink>
+          <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
+        </div>
+        <div className='flex justify-center mb-[-40px]'>
+          <HeaderMenu
+            menu={menu}
+            viewport="desktop"
+            primaryDomainUrl={header.shop.primaryDomain.url}
+            publicStoreDomain={publicStoreDomain}
+          />
+        </div>
+      </div>
     </header>
   );
 }
+
+// New SideBarMenu component
+function SideBarMenu({
+  menu,
+  primaryDomainUrl,
+  publicStoreDomain,
+}: {
+  menu: HeaderProps['header']['menu'];
+  primaryDomainUrl: HeaderProps['header']['shop']['primaryDomain']['url'];
+  publicStoreDomain: HeaderProps['publicStoreDomain'];
+}) {
+  const utilityMenuItems = (menu || FALLBACK_HEADER_MENU).items.slice(3, 7);
+
+  return (
+    <ul className='flex justify-end text-[14px] h-[20px] space-x-4  '>
+      {utilityMenuItems.map((item) => {
+        // Ensure item.url is a string before proceeding
+        if (!item.url) {
+          return null;
+        }
+
+        const itemUrlString = item.url; // TypeScript now knows this is a string after the check
+
+        const url =
+          itemUrlString.includes('myshopify.com') ||
+          itemUrlString.includes(publicStoreDomain) ||
+          itemUrlString.includes(primaryDomainUrl)
+            ? new URL(itemUrlString).pathname
+            : itemUrlString;
+
+        return (
+          <li key={item.id} className='!text-[#87857E]'>
+            <NavLink className="!text-[#87857E] "
+              prefetch="intent"
+              to={url} // 'url' is now guaranteed to be a string
+              style={activeLinkStyle}
+            >
+              {item.title}
+            </NavLink>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 
 export function HeaderMenu({
   menu,
@@ -47,8 +112,14 @@ export function HeaderMenu({
   viewport: Viewport;
   publicStoreDomain: HeaderProps['publicStoreDomain'];
 }) {
-  const className = `header-menu-${viewport}`;
-  const {close} = useAside();
+  const className = `header-menu-${viewport} `;
+  const { close } = useAside();
+
+  const [isCollectionsDropdownOpen, setIsCollectionsDropdownOpen] = useState(false);
+
+  const mainMenuItemsToDisplay = viewport === 'desktop'
+    ? (menu || FALLBACK_HEADER_MENU).items.slice(0, 3)
+    : (menu || FALLBACK_HEADER_MENU).items;
 
   return (
     <nav className={className} role="navigation">
@@ -63,25 +134,74 @@ export function HeaderMenu({
           Home
         </NavLink>
       )}
-      {(menu || FALLBACK_HEADER_MENU).items.map((item) => {
-        if (!item.url) return null;
+      {mainMenuItemsToDisplay.map((item) => {
+        // Ensure item.url is a string before proceeding
+        if (!item.url) {
+          return null;
+        }
 
-        // if the url is internal, we strip the domain
+        const itemUrlString = item.url; // TypeScript now knows this is a string after the check
+
         const url =
-          item.url.includes('myshopify.com') ||
-          item.url.includes(publicStoreDomain) ||
-          item.url.includes(primaryDomainUrl)
-            ? new URL(item.url).pathname
-            : item.url;
+          itemUrlString.includes('myshopify.com') ||
+          itemUrlString.includes(publicStoreDomain) ||
+          itemUrlString.includes(primaryDomainUrl)
+            ? new URL(itemUrlString).pathname
+            : itemUrlString;
+
+        if (item.title === 'COLLECTIONS' && viewport === 'desktop') {
+          return (
+            <div
+              key={item.id}
+              onMouseEnter={() => setIsCollectionsDropdownOpen(true)}
+              onMouseLeave={() => setIsCollectionsDropdownOpen(false)}
+            >
+              <NavLink
+                className="header-menu-item hover:underline underline-offset-4 hover:underline-offset-8 transition-all duration-300 ease-in-out"
+                end
+                onClick={close}
+                prefetch="intent"
+                style={activeLinkStyle}
+                to={url} // 'url' is now guaranteed to be a string
+              >
+                {item.title}
+              </NavLink>
+
+              {isCollectionsDropdownOpen && (
+                <div className="absolute left-0 mt-[-5px] right-0 top-[calc(100%+ 2px)] bg-white shadow-lg py-2 z-10 flex justify-center">
+                  <div className="max-w-[1200px] w-full flex">
+                    <div className="w-[263px]">
+                      <h3 className="text-[#87857E] text-[18px] mb-4 font-big-caslon">Discover Your Perfect Piece</h3>
+                      <ul className="space-y-2">
+                        {["Rings", "Necklace", "Earrings","Bracelets"].map((item) => (
+                          <li key={item}>
+                            {/* Assuming these are hardcoded and not from item.url, so no changes needed here for now */}
+                            <a
+                              href={`/collections/${item.toLowerCase().replace(/\s+/g, "-")}`}
+                              className="font-mr-eaves text-[#2B2A2A] text-[18px] hover:text-[#87857E]"
+                            >
+                              {item}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
         return (
           <NavLink
-            className="header-menu-item"
+            className="header-menu-item hover:underline underline-offset-4 hover:underline-offset-8 transition-all duration-300  ease-in-out"
             end
             key={item.id}
             onClick={close}
             prefetch="intent"
             style={activeLinkStyle}
-            to={url}
+            to={url} // 'url' is now guaranteed to be a string
           >
             {item.title}
           </NavLink>
@@ -99,9 +219,9 @@ function HeaderCtas({
     <nav className="header-ctas" role="navigation">
       <HeaderMenuMobileToggle />
       <NavLink prefetch="intent" to="/account" style={activeLinkStyle}>
-        <Suspense fallback="Sign in">
-          <Await resolve={isLoggedIn} errorElement="Sign in">
-            {(isLoggedIn) => (isLoggedIn ? 'Account' : 'Sign in')}
+        <Suspense fallback={<FiUser size={24} />}>
+          <Await resolve={isLoggedIn} errorElement={<FiUser size={24} />}>
+            {(isLoggedIn) => (isLoggedIn ? <FiUser size={24} /> : <FiUser size={26} />)}
           </Await>
         </Suspense>
       </NavLink>
@@ -112,29 +232,29 @@ function HeaderCtas({
 }
 
 function HeaderMenuMobileToggle() {
-  const {open} = useAside();
+  const { open } = useAside();
   return (
     <button
       className="header-menu-mobile-toggle reset"
       onClick={() => open('mobile')}
     >
-      <h3>☰</h3>
+      <FiMenu size={24} />
     </button>
   );
 }
 
 function SearchToggle() {
-  const {open} = useAside();
+  const { open } = useAside();
   return (
     <button className="reset" onClick={() => open('search')}>
-      Search
+      <FiSearch size={24} />
     </button>
   );
 }
 
-function CartBadge({count}: {count: number | null}) {
-  const {open} = useAside();
-  const {publish, shop, cart, prevCart} = useAnalytics();
+function CartBadge({ count }: { count: number | null }) {
+  const { open } = useAside();
+  const { publish, shop, cart, prevCart } = useAnalytics();
 
   return (
     <a
@@ -149,23 +269,28 @@ function CartBadge({count}: {count: number | null}) {
           url: window.location.href || '',
         } as CartViewPayload);
       }}
+      style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
     >
-      Cart {count === null ? <span>&nbsp;</span> : count}
+      <FiShoppingCart size={24} />
+      {count === null ? <span>&nbsp;</span> : count}
     </a>
   );
 }
 
-function CartToggle({cart}: Pick<HeaderProps, 'cart'>) {
+function CartToggle({ cart }: Pick<HeaderProps, 'cart'>) {
   return (
     <Suspense fallback={<CartBadge count={null} />}>
       <Await resolve={cart}>
-        {(cart) => {
-          if (!cart) return <CartBadge count={0} />;
-          return <CartBadge count={cart.totalQuantity || 0} />;
-        }}
+        <CartBanner />
       </Await>
     </Suspense>
   );
+}
+
+function CartBanner() {
+  const originalCart = useAsyncValue() as CartApiQueryFragment | null;
+  const cart = useOptimisticCart(originalCart);
+  return <CartBadge count={cart?.totalQuantity ?? 0} />;
 }
 
 const FALLBACK_HEADER_MENU = {
@@ -175,7 +300,7 @@ const FALLBACK_HEADER_MENU = {
       id: 'gid://shopify/MenuItem/461609500728',
       resourceId: null,
       tags: [],
-      title: 'Collections',
+      title: 'COLLECTIONS',
       type: 'HTTP',
       url: '/collections',
       items: [],
@@ -206,6 +331,42 @@ const FALLBACK_HEADER_MENU = {
       type: 'PAGE',
       url: '/pages/about',
       items: [],
+    },
+    {
+        id: 'gid://shopify/MenuItem/EXTRA_ITEM_1',
+        resourceId: null,
+        tags: [],
+        title: 'Gift Card',
+        type: 'HTTP',
+        url: '/gift-card',
+        items: [],
+    },
+    {
+        id: 'gid://shopify/MenuItem/EXTRA_ITEM_2',
+        resourceId: null,
+        tags: [],
+        title: 'Careers',
+        type: 'HTTP',
+        url: '/careers',
+        items: [],
+    },
+    {
+        id: 'gid://shopify/MenuItem/EXTRA_ITEM_3',
+        resourceId: null,
+        tags: [],
+        title: 'Wholesale',
+        type: 'HTTP',
+        url: '/wholesale',
+        items: [],
+    },
+    {
+        id: 'gid://shopify/MenuItem/EXTRA_ITEM_4',
+        resourceId: null,
+        tags: [],
+        title: 'Affiliates',
+        type: 'HTTP',
+        url: '/affiliates',
+        items: [],
     },
   ],
 };
