@@ -20,7 +20,7 @@ import {
   FEATURED_COLLECTION_QUERY,
 } from '~/components/FeaturedCollections';
 import JustLandedSection from '~/components/JustLanded';
-import {LuxuryShine} from '~/components/LuxuryShine';
+// import {LuxuryShine} from '~/components/LuxuryShine';
 import EventReady from '~/components/EventReady';
 import {LUXURY_SHINE_QUERY_BY_HANDLE} from '~/graphql/meta-objects/LuxuryShineQuery';
 
@@ -156,12 +156,7 @@ function LuxuryShineCollections({
 
             return (
               <div className="">
-                {collection ? (
-                  <LuxuryShine
-                    key={collection.id}
-                    luxuryshinecollection={collection}
-                  />
-                ) : (
+                {(
                   <div>No luxury shine collection found.</div>
                 )}
               </div>
