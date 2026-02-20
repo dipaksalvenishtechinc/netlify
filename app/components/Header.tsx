@@ -264,29 +264,26 @@ function SearchToggle() {
 
 function CartBadge({count}: {count: number | null}) {
   const {open} = useAside();
-  const {publish, shop, cart, prevCart} = useAnalytics();
+  const analytics = useAnalytics();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    open('cart');
+
+    if (typeof window !== 'undefined') {
+      analytics.publish('cart_viewed', {
+        cart: analytics.cart,
+        prevCart: analytics.prevCart,
+        shop: analytics.shop,
+        url: window.location.href,
+      } as CartViewPayload);
+    }
+  };
 
   return (
-    <a
-      href="/cart"
-      onClick={(e) => {
-        e.preventDefault();
-
-        const url = typeof window !== 'undefined' ? window.location.href : '';
-
-        open('cart');
-
-        publish('cart_viewed', {
-          cart,
-          prevCart,
-          shop,
-          url,
-        } as CartViewPayload);
-      }}
-      style={{display: 'flex', alignItems: 'center', gap: '4px'}}
-    >
+    <a href="/cart" onClick={handleClick}>
       <FiShoppingCart size={24} />
-      {count === null ? <span>&nbsp;</span> : count}
+      {count ?? ''}
     </a>
   );
 }
