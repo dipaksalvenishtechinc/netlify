@@ -9,7 +9,6 @@ import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import gildedLogo from '../assets/gilded-logo.png';
 // Import icons
-import {FiUser, FiSearch, FiShoppingCart, FiMenu} from 'react-icons/fi';
 
 interface HeaderProps {
   header: HeaderQuery;
@@ -227,10 +226,10 @@ function HeaderCtas({
     <nav className="header-ctas" role="navigation">
       <HeaderMenuMobileToggle />
       <NavLink prefetch="intent" to="/account" style={activeLinkStyle}>
-        <Suspense fallback={<FiUser size={24} />}>
-          <Await resolve={isLoggedIn} errorElement={<FiUser size={24} />}>
+        <Suspense fallback={<span size={24} />}>
+          <Await resolve={isLoggedIn} errorElement={<span size={24} />}>
             {(isLoggedIn) =>
-              isLoggedIn ? <FiUser size={24} /> : <FiUser size={26} />
+              isLoggedIn ? <span size={24} /> : <span size={26} />
             }
           </Await>
         </Suspense>
@@ -248,7 +247,7 @@ function HeaderMenuMobileToggle() {
       className="header-menu-mobile-toggle reset"
       onClick={() => open('mobile')}
     >
-      <FiMenu size={24} />
+      <span size={24} />
     </button>
   );
 }
@@ -257,7 +256,7 @@ function SearchToggle() {
   const {open} = useAside();
   return (
     <button className="reset" onClick={() => open('search')}>
-      <FiSearch size={24} />
+      <span size={24} />
     </button>
   );
 }
@@ -282,7 +281,7 @@ function CartBadge({count}: {count: number | null}) {
 
   return (
     <a href="/cart" onClick={handleClick}>
-      <FiShoppingCart size={24} />
+      <span size={24} />
       {count ?? ''}
     </a>
   );

@@ -1,4 +1,4 @@
-import {useNonce} from '@shopify/hydrogen';
+import {useNonce, getShopAnalytics, Analytics} from '@shopify/hydrogen';
 import {defer, type LoaderFunctionArgs} from '@netlify/remix-runtime';
 import {
   Links,
@@ -55,7 +55,14 @@ export async function loader(args: LoaderFunctionArgs) {
     ...deferredData,
     ...criticalData,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
-   
+    shop: getShopAnalytics({
+      storefront,
+      publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
+    }),
+    consent: {
+      checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
+      storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
+    },
   });
 }
 
@@ -121,7 +128,17 @@ export function Layout({children}: {children?: React.ReactNode}) {
       </head>
 
       <body>
-        {data ? <PageLayout {...data}>{children}</PageLayout> : children}
+        {data ? (
+          <Analytics.Provider
+            cart={data.cart}
+            shop={data.shop}
+            consent={data.consent}
+          >
+            <PageLayout {...data}>{children}</PageLayout>
+          </Analytics.Provider>
+        ) : (
+          children
+        )}
 
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
