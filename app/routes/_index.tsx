@@ -19,10 +19,10 @@ import {
   FeaturedCollections,
   FEATURED_COLLECTION_QUERY,
 } from '~/components/FeaturedCollections';
-// import JustLandedSection from '~/components/JustLanded';
+import JustLandedSection from '~/components/JustLanded';
 import {LuxuryShine} from '~/components/LuxuryShine';
-import EventReady from '~/components/EventReady';
-// import {LUXURY_SHINE_QUERY_BY_HANDLE} from '~/graphql/meta-objects/LuxuryShineQuery';
+// import EventReady from '~/components/EventReady';
+import {LUXURY_SHINE_QUERY_BY_HANDLE} from '~/graphql/meta-objects/LuxuryShineQuery';
 
 export const meta: MetaFunction = () => {
   return [{title: 'Hydrogen | Home'}];
@@ -66,16 +66,16 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
 
   const luxuryShineHandle = 'where-luxury-shines'; // Or get it dynamically from context/env/params
 
-  // const luxuryshinecollections = context.storefront
-  //   .query(LUXURY_SHINE_QUERY_BY_HANDLE, {
-  //     variables: {
-  //       handle: luxuryShineHandle, // Pass the dynamic handle as a variable
-  //     } as GetLuxuryshineContentByHandleQueryVariables, // Type assertion for variables
-  //   })
-  //   .catch((error) => {
-  //     console.error('Luxuryshine collections error:', error);
-  //     return null;
-  //   });
+  const luxuryshinecollections = context.storefront
+    .query(LUXURY_SHINE_QUERY_BY_HANDLE, {
+      variables: {
+        handle: luxuryShineHandle, // Pass the dynamic handle as a variable
+      } as GetLuxuryshineContentByHandleQueryVariables, // Type assertion for variables
+    })
+    .catch((error) => {
+      console.error('Luxuryshine collections error:', error);
+      return null;
+    });
 
   const justlanded = context.storefront
     .query(JUST_LANDED_QUERY)
@@ -94,6 +94,7 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
   return {
     recommendedProducts,
     heroBanner,
+    luxuryshinecollections,
     justlanded,
     eventready,
   };
@@ -105,8 +106,11 @@ export default function Homepage() {
   return (
     <div className="home">
       {<HeroBannerSection heroBanner={data.heroBanner} />}
+      <JustLandedSection products={data.justlanded} />
       <FeaturedCollections collections={data.featuredCollections} />
-      <EventReady products={data.eventready} />
+      <LuxuryShineCollections
+        luxuryshinecollections={data.luxuryshinecollections}
+      />
     </div>
   );
 }
