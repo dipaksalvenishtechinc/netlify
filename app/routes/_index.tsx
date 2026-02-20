@@ -1,6 +1,7 @@
 import {defer, type LoaderFunctionArgs} from '@netlify/remix-runtime';
 import {Await, useLoaderData, Link} from '@remix-run/react';
 import {Suspense} from 'react';
+import {HeroBanner} from '~/components/HeroBanner';
 import type {
   GetLuxuryshineContentByHandleQuery,
   RecommendedProductsQuery,
@@ -9,6 +10,7 @@ import type {
   GetHeroBannerByHandleQuery,
 } from 'storefrontapi.generated';
 import type {GetLuxuryshineContentQuery} from 'storefrontapi.generated';
+import {ProductItem} from '~/components/ProductItem';
 import {
   HERO_BANNER_QUERY,
   HERO_BANNER_QUERY_BY_HANDLE,
@@ -103,7 +105,10 @@ export default function Homepage() {
 
   return (
     <div className="home">
+      {<HeroBannerSection heroBanner={data.heroBanner} />}
       <JustLandedSection products={data.justlanded} />
+      <FeaturedCollections collections={data.featuredCollections} />
+      <EventReady products={data.eventready} />
       <LuxuryShineCollections
         luxuryshinecollections={data.luxuryshinecollections}
       />
