@@ -7,7 +7,6 @@ import type {
 } from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
 import {ShoppingCart} from 'lucide-react';
-import {toast} from 'react-hot-toast';
 
 export function ProductItem({
   product,
@@ -22,9 +21,11 @@ export function ProductItem({
   const variantUrl = useVariantUrl(product.handle);
   const image = product.featuredImage;
 
-  const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleAddToCart = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+
     if (typeof window !== 'undefined') {
+      const {toast} = await import('react-hot-toast');
       toast.success(`${product.title} added to cart!`);
     }
   };

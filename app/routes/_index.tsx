@@ -184,7 +184,13 @@ function RecommendedProducts({
       <Suspense fallback={<div>Loading...</div>}>
         <Await resolve={products}>
           {(response) => (
-            <div className="recommended-products-grid">{null}</div>
+            <div className="recommended-products-grid">
+              {response
+                ? response.products.nodes.map((product) => (
+                    <ProductItem key={product.id} product={product} />
+                  ))
+                : null}
+            </div>
           )}
         </Await>
       </Suspense>
