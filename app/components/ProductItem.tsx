@@ -24,7 +24,9 @@ export function ProductItem({
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    toast.success(`${product.title} added to cart!`);
+    if (typeof window !== 'undefined') {
+      toast.success(`${product.title} added to cart!`);
+    }
   };
 
   return (
