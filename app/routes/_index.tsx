@@ -1,7 +1,6 @@
 import {defer, type LoaderFunctionArgs} from '@netlify/remix-runtime';
 import {Await, useLoaderData, Link} from '@remix-run/react';
 import {Suspense} from 'react';
-import {HeroBanner} from '~/components/HeroBanner';
 import type {
   GetLuxuryshineContentByHandleQuery,
   RecommendedProductsQuery,
@@ -21,7 +20,7 @@ import {
 } from '~/components/FeaturedCollections';
 import JustLandedSection from '~/components/JustLanded';
 import {LuxuryShine} from '~/components/LuxuryShine';
-// import EventReady from '~/components/EventReady';
+import EventReady from '~/components/EventReady';
 import {LUXURY_SHINE_QUERY_BY_HANDLE} from '~/graphql/meta-objects/LuxuryShineQuery';
 
 export const meta: MetaFunction = () => {
@@ -105,9 +104,7 @@ export default function Homepage() {
 
   return (
     <div className="home">
-      {<HeroBannerSection heroBanner={data.heroBanner} />}
       <JustLandedSection products={data.justlanded} />
-      <FeaturedCollections collections={data.featuredCollections} />
       <LuxuryShineCollections
         luxuryshinecollections={data.luxuryshinecollections}
       />
