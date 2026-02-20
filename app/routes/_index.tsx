@@ -9,7 +9,6 @@ import type {
   GetHeroBannerByHandleQuery,
 } from 'storefrontapi.generated';
 import type {GetLuxuryshineContentQuery} from 'storefrontapi.generated';
-import {ProductItem} from '~/components/ProductItem';
 import {
   HERO_BANNER_QUERY,
   HERO_BANNER_QUERY_BY_HANDLE,
@@ -180,13 +179,7 @@ function RecommendedProducts({
       <Suspense fallback={<div>Loading...</div>}>
         <Await resolve={products}>
           {(response) => (
-            <div className="recommended-products-grid">
-              {response
-                ? response.products.nodes.map((product) => (
-                    <ProductItem key={product.id} product={product} />
-                  ))
-                : null}
-            </div>
+            <div className="recommended-products-grid">{null}</div>
           )}
         </Await>
       </Suspense>
