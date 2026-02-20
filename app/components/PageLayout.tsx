@@ -7,6 +7,7 @@ import type {
 } from 'storefrontapi.generated';
 import {Aside} from '~/components/Aside';
 import {Footer} from '~/components/Footer';
+import {NewFooter} from '~/components/NewFooter'
 import {Header, HeaderMenu} from '~/components/Header';
 import {CartMain} from '~/components/CartMain';
 import {
@@ -22,12 +23,14 @@ interface PageLayoutProps {
   isLoggedIn: Promise<boolean>;
   publicStoreDomain: string;
   children?: React.ReactNode;
+  newFooter: Promise<FooterQuery | null>;
 }
 
 export function PageLayout({
   cart,
   children = null,
   footer,
+  newFooter,
   header,
   isLoggedIn,
   publicStoreDomain,
@@ -46,11 +49,15 @@ export function PageLayout({
         />
       )}
       <main>{children}</main>
-      <Footer
+      {/* <Footer
         footer={footer}
         header={header}
         publicStoreDomain={publicStoreDomain}
-      />
+      />  */}
+      <NewFooter 
+      footer={newFooter}
+        header={header}
+        publicStoreDomain={publicStoreDomain} />
     </Aside.Provider>
   );
 }

@@ -1,12 +1,13 @@
-import {Link, useNavigate} from 'react-router';
-import {type MappedProductOptions} from '@shopify/hydrogen';
+import { Link, useNavigate } from 'react-router';
+import { type MappedProductOptions } from '@shopify/hydrogen';
 import type {
   Maybe,
   ProductOptionValueSwatch,
 } from '@shopify/hydrogen/storefront-api-types';
-import {AddToCartButton} from './AddToCartButton';
-import {useAside} from './Aside';
-import type {ProductFragment} from 'storefrontapi.generated';
+import { ShoppingCart } from 'lucide-react';
+import { AddToCartButton } from './AddToCartButton';
+import { useAside } from './Aside';
+import type { ProductFragment } from 'storefrontapi.generated';
 
 export function ProductForm({
   productOptions,
@@ -16,7 +17,7 @@ export function ProductForm({
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
 }) {
   const navigate = useNavigate();
-  const {open} = useAside();
+  const { open } = useAside();
   return (
     <div className="product-form">
       {productOptions.map((option) => {
@@ -24,9 +25,9 @@ export function ProductForm({
         if (option.optionValues.length === 1) return null;
 
         return (
-          <div className="product-options" key={option.name}>
+          <div className="product-options lg:w-[400px]  mt-9 mb-20" key={option.name}>
             <h5>{option.name}</h5>
-            <div className="product-options-grid">
+            <div className="  product-options-grid !grid grid-cols-2 gap-4">
               {option.optionValues.map((value) => {
                 const {
                   name,
@@ -46,13 +47,14 @@ export function ProductForm({
                   // as an anchor tag
                   return (
                     <Link
-                      className="product-options-item"
+                      className="product-options-item grid grid-cols-2 gap-4"
                       key={option.name + name}
                       prefetch="intent"
                       preventScrollReset
                       replace
                       to={`/products/${handle}?${variantUriQuery}`}
                       style={{
+                        backgroundColor: selected ? '#e5eba5' : 'transparent',
                         border: selected
                           ? '1px solid black'
                           : '1px solid transparent',
@@ -71,20 +73,21 @@ export function ProductForm({
                   return (
                     <button
                       type="button"
-                      className={`product-options-item${
-                        exists && !selected ? ' link' : ''
-                      }`}
+                      className={` product-options-item${exists && !selected ? ' link' : ''
+                        } ` }
                       key={option.name + name}
                       style={{
+                        backgroundColor: selected ? '#000' : 'transparent',
+                        color:selected ? 'white' : 'black',
                         border: selected
                           ? '1px solid black'
-                          : '1px solid transparent',
-                        opacity: available ? 1 : 0.3,
+                          : '1px solid black',
+                        opacity: available ? 1 : 1,
                       }}
                       disabled={!exists}
                       onClick={() => {
                         if (!selected) {
-                          void navigate(`?${variantUriQuery}`, {
+                          navigate(`?${variantUriQuery}`, {
                             replace: true,
                             preventScrollReset: true,
                           });
@@ -109,16 +112,17 @@ export function ProductForm({
         lines={
           selectedVariant
             ? [
-                {
-                  merchandiseId: selectedVariant.id,
-                  quantity: 1,
-                  selectedVariant,
-                },
-              ]
+              {
+                merchandiseId: selectedVariant.id,
+                quantity: 1,
+                selectedVariant,
+              },
+            ]
             : []
         }
       >
-        {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+        <ShoppingCart size={20}
+        /> {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
       </AddToCartButton>
     </div>
   );

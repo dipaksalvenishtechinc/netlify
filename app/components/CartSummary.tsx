@@ -1,8 +1,8 @@
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CartLayout} from '~/components/CartMain';
 import {CartForm, Money, type OptimisticCart} from '@shopify/hydrogen';
-import {useEffect, useRef} from 'react';
-import {useFetcher} from 'react-router';
+import {useRef} from 'react';
+import {FetcherWithComponents} from 'react-router';
 
 type CartSummaryProps = {
   cart: OptimisticCart<CartApiQueryFragment | null>;
@@ -19,20 +19,19 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
       <dl className="cart-subtotal">
         <dt>Subtotal</dt>
         <dd>
-          {cart?.cost?.subtotalAmount?.amount ? (
-            <Money data={cart?.cost?.subtotalAmount} />
+          {cart.cost?.subtotalAmount?.amount ? (
+            <Money data={cart.cost?.subtotalAmount} />
           ) : (
             '-'
           )}
         </dd>
       </dl>
-      <CartDiscounts discountCodes={cart?.discountCodes} />
-      <CartGiftCard giftCardCodes={cart?.appliedGiftCards} />
-      <CartCheckoutActions checkoutUrl={cart?.checkoutUrl} />
+      <CartDiscounts discountCodes={cart.discountCodes} />
+      <CartGiftCard giftCardCodes={cart.appliedGiftCards} />
+      <CartCheckoutActions checkoutUrl={cart.checkoutUrl} />
     </div>
   );
 }
-
 function CartCheckoutActions({checkoutUrl}: {checkoutUrl?: string}) {
   if (!checkoutUrl) return null;
 
@@ -66,9 +65,7 @@ function CartDiscounts({
             <div className="cart-discount">
               <code>{codes?.join(', ')}</code>
               &nbsp;
-              <button type="submit" aria-label="Remove discount">
-                Remove
-              </button>
+              <button>Remove</button>
             </div>
           </UpdateDiscountForm>
         </div>
@@ -77,19 +74,9 @@ function CartDiscounts({
       {/* Show an input to apply a discount */}
       <UpdateDiscountForm discountCodes={codes}>
         <div>
-          <label htmlFor="discount-code-input" className="sr-only">
-            Discount code
-          </label>
-          <input
-            id="discount-code-input"
-            type="text"
-            name="discountCode"
-            placeholder="Discount code"
-          />
+          <input type="text" name="discountCode" placeholder="Discount code" />
           &nbsp;
-          <button type="submit" aria-label="Apply discount code">
-            Apply
-          </button>
+          <button type="submit">Apply</button>
         </div>
       </UpdateDiscountForm>
     </div>
@@ -121,35 +108,44 @@ function CartGiftCard({
 }: {
   giftCardCodes: CartApiQueryFragment['appliedGiftCards'] | undefined;
 }) {
+  const appliedGiftCardCodes = useRef<string[]>([]);
   const giftCardCodeInput = useRef<HTMLInputElement>(null);
-  const giftCardAddFetcher = useFetcher({key: 'gift-card-add'});
+  const codes: string[] =
+    giftCardCodes?.map(({lastCharacters}) => `***${lastCharacters}`) || [];
 
-  useEffect(() => {
-    if (giftCardAddFetcher.data) {
-      giftCardCodeInput.current!.value = '';
+  function saveAppliedCode(code: string) {
+    const formattedCode = code.replace(/\s/g, ''); // Remove spaces
+    if (!appliedGiftCardCodes.current.includes(formattedCode)) {
+      appliedGiftCardCodes.current.push(formattedCode);
     }
-  }, [giftCardAddFetcher.data]);
+    giftCardCodeInput.current!.value = '';
+  }
+
+  function removeAppliedCode() {
+    appliedGiftCardCodes.current = [];
+  }
 
   return (
     <div>
-      {giftCardCodes && giftCardCodes.length > 0 && (
-        <dl>
+      {/* Have existing gift card applied, display it with a remove option */}
+      <dl hidden={!codes.length}>
+        <div>
           <dt>Applied Gift Card(s)</dt>
-          {giftCardCodes.map((giftCard) => (
-            <RemoveGiftCardForm key={giftCard.id} giftCardId={giftCard.id}>
-              <div className="cart-discount">
-                <code>***{giftCard.lastCharacters}</code>
-                &nbsp;
-                <Money data={giftCard.amountUsed} />
-                &nbsp;
-                <button type="submit">Remove</button>
-              </div>
-            </RemoveGiftCardForm>
-          ))}
-        </dl>
-      )}
+          <UpdateGiftCardForm>
+            <div className="cart-discount">
+              <code>{codes?.join(', ')}</code>
+              &nbsp;
+              <button onSubmit={() => removeAppliedCode}>Remove</button>
+            </div>
+          </UpdateGiftCardForm>
+        </div>
+      </dl>
 
-      <AddGiftCardForm fetcherKey="gift-card-add">
+      {/* Show an input to apply a discount */}
+      <UpdateGiftCardForm
+        giftCardCodes={appliedGiftCardCodes.current}
+        saveAppliedCode={saveAppliedCode}
+      >
         <div>
           <input
             type="text"
@@ -158,49 +154,38 @@ function CartGiftCard({
             ref={giftCardCodeInput}
           />
           &nbsp;
-          <button type="submit" disabled={giftCardAddFetcher.state !== 'idle'}>
-            Apply
-          </button>
+          <button type="submit">Apply</button>
         </div>
-      </AddGiftCardForm>
+      </UpdateGiftCardForm>
     </div>
   );
 }
 
-function AddGiftCardForm({
-  fetcherKey,
+function UpdateGiftCardForm({
+  giftCardCodes,
+  saveAppliedCode,
   children,
 }: {
-  fetcherKey?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <CartForm
-      fetcherKey={fetcherKey}
-      route="/cart"
-      action={CartForm.ACTIONS.GiftCardCodesAdd}
-    >
-      {children}
-    </CartForm>
-  );
-}
-
-function RemoveGiftCardForm({
-  giftCardId,
-  children,
-}: {
-  giftCardId: string;
+  giftCardCodes?: string[];
+  saveAppliedCode?: (code: string) => void;
+  removeAppliedCode?: () => void;
   children: React.ReactNode;
 }) {
   return (
     <CartForm
       route="/cart"
-      action={CartForm.ACTIONS.GiftCardCodesRemove}
+      action={CartForm.ACTIONS.GiftCardCodesUpdate}
       inputs={{
-        giftCardCodes: [giftCardId],
+        giftCardCodes: giftCardCodes || [],
       }}
     >
-      {children}
+      {(fetcher: FetcherWithComponents<any>) => {
+        const code = fetcher.formData?.get('giftCardCode');
+        if (code && saveAppliedCode) {
+          saveAppliedCode(code as string);
+        }
+        return children;
+      }}
     </CartForm>
   );
 }
