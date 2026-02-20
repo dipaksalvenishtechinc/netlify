@@ -1,4 +1,4 @@
-import {useNonce, getShopAnalytics, Analytics} from '@shopify/hydrogen';
+import {getShopAnalytics, Analytics} from '@shopify/hydrogen';
 import {defer, type LoaderFunctionArgs} from '@netlify/remix-runtime';
 import {
   Links,
@@ -11,16 +11,20 @@ import {
   isRouteErrorResponse,
   type ShouldRevalidateFunction,
 } from '@remix-run/react';
+
 import favicon from '~/assets/favicon.svg';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
+import tailwindCss from '~/styles/tailwind.css?url';
+// eslint-disable-next-line import/no-duplicates
+import '~/styles/tailwind.css';
 import {PageLayout} from '~/components/PageLayout';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 
 export type RootLoader = typeof loader;
 
 /**
- * This is important to avoid re-fetching root queries on sub-navigations
+ * Prevent unnecessary refetch
  */
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   formMethod,
@@ -28,36 +32,21 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   nextUrl,
   defaultShouldRevalidate,
 }) => {
-  // revalidate when a mutation is performed e.g add to cart, login...
   if (formMethod && formMethod !== 'GET') return true;
-
-  // revalidate when manually revalidating via useRevalidator
   if (currentUrl.toString() === nextUrl.toString()) return true;
-
   return defaultShouldRevalidate;
 };
 
 export function links() {
   return [
-    {rel: 'stylesheet', href: resetStyles},
-    {rel: 'stylesheet', href: appStyles},
-    {
-      rel: 'preconnect',
-      href: 'https://cdn.shopify.com',
-    },
-    {
-      rel: 'preconnect',
-      href: 'https://shop.app',
-    },
+    {rel: 'preconnect', href: 'https://cdn.shopify.com'},
+    {rel: 'preconnect', href: 'https://shop.app'},
     {rel: 'icon', type: 'image/svg+xml', href: favicon},
   ];
 }
 
 export async function loader(args: LoaderFunctionArgs) {
-  // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
 
   const {storefront, env} = args.context;
@@ -77,10 +66,6 @@ export async function loader(args: LoaderFunctionArgs) {
   });
 }
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
 async function loadCriticalData({context}: LoaderFunctionArgs) {
   const {storefront} = context;
 
@@ -88,47 +73,45 @@ async function loadCriticalData({context}: LoaderFunctionArgs) {
     storefront.query(HEADER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
-        headerMenuHandle: 'main-menu', // Adjust to your header menu handle
+        headerMenuHandle: 'main-menu',
       },
     }),
-    // Add other queries here, so that they are loaded in parallel
   ]);
 
-  return {
-    header,
-  };
+  return {header};
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
 function loadDeferredData({context}: LoaderFunctionArgs) {
   const {storefront, customerAccount, cart} = context;
 
-  // defer the footer query (below the fold)
   const footer = storefront
     .query(FOOTER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
-        footerMenuHandle: 'footer', // Adjust to your footer menu handle
+        footerMenuHandle: 'footer',
       },
     })
-    .catch((error) => {
-      // Log query errors, but don't throw them so the page can still render
-      console.error(error);
-      return null;
-    });
+    .catch(() => null);
+
+  const newFooter = storefront
+    .query(FOOTER_QUERY, {
+      cache: storefront.CacheLong(),
+      variables: {
+        footerMenuHandle: 'new-footer',
+      },
+    })
+    .catch(() => null);
+
   return {
     cart: cart.get(),
     isLoggedIn: customerAccount.isLoggedIn(),
     footer,
+    newFooter,
   };
 }
 
 export function Layout({children}: {children?: React.ReactNode}) {
-  const nonce = useNonce();
+  const nonce = undefined;
   const data = useRouteLoaderData<RootLoader>('root');
 
   return (
@@ -136,9 +119,14 @@ export function Layout({children}: {children?: React.ReactNode}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+        <link rel="stylesheet" href={resetStyles}></link>
+        <link rel="stylesheet" href={appStyles}></link>
+
         <Meta />
         <Links />
       </head>
+
       <body>
         {data ? (
           <Analytics.Provider
@@ -151,6 +139,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
         ) : (
           children
         )}
+
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
       </body>
