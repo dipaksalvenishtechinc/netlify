@@ -20,8 +20,8 @@ import {
   FEATURED_COLLECTION_QUERY,
 } from '~/components/FeaturedCollections';
 import JustLandedSection from '~/components/JustLanded';
-// import {LuxuryShine} from '~/components/LuxuryShine';
-import EventReady from '~/components/EventReady';
+import {LuxuryShine} from '~/components/LuxuryShine';
+// import EventReady from '~/components/EventReady';
 import {LUXURY_SHINE_QUERY_BY_HANDLE} from '~/graphql/meta-objects/LuxuryShineQuery';
 
 export const meta: MetaFunction = () => {
@@ -108,7 +108,6 @@ export default function Homepage() {
       {<HeroBannerSection heroBanner={data.heroBanner} />}
       <JustLandedSection products={data.justlanded} />
       <FeaturedCollections collections={data.featuredCollections} />
-      <EventReady products={data.eventready} />
       <LuxuryShineCollections
         luxuryshinecollections={data.luxuryshinecollections}
       />
@@ -156,7 +155,12 @@ function LuxuryShineCollections({
 
             return (
               <div className="">
-                {(
+                {collection ? (
+                  <LuxuryShine
+                    key={collection.id}
+                    luxuryshinecollection={collection}
+                  />
+                ) : (
                   <div>No luxury shine collection found.</div>
                 )}
               </div>
